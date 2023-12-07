@@ -2,65 +2,140 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 
 export default function App() {
-  const [responseData, setResponseData] = useState([]);
+  const { XMLParser } = require("fast-xml-parser");
+  const parser = new XMLParser();
+  
+  const [yearData, setYearData] = useState([]);
+  const [semesterData, setSemesterData] = useState([]);
+  const [subjectData, setSubjectData] = useState([]);
+  const [courseData, setCourseData] = useState([]);
 
-  const GET = () => {
-    console.log("GET");
+  const GET_YEARS = () => {
+    const years = 'http://courses.illinois.edu/cisapp/explorer/schedule.xml';
     const Http = new XMLHttpRequest();
-    const url = 'http://courses.illinois.edu/cisapp/explorer/schedule.xml';
-    Http.open("GET", url);
+    Http.open("GET", years);
     Http.send();
 
     Http.onreadystatechange = (e) => {
       if (Http.readyState === 4 && Http.status === 200) {
         const response = Http.responseText;
-        const parsedResponse = parseResponse(response);
-        setResponseData(parsedResponse);
+        const parsedResponse = parseYears(response);
+        setYearData(parsedResponse);
       }
     }
   };
 
-  const parseResponse = (response) => {
-    const { XMLParser } = require("fast-xml-parser");
-    const parser = new XMLParser();
+  const GET_SEMESTER = (year) => {
+    const semester = `http://courses.illinois.edu/cisapp/explorer/schedule/${year}.xml`;
+    const Http = new XMLHttpRequest();
+    Http.open("GET", semester);
+    Http.send();
+
+    Http.onreadystatechange = (e) => {
+      if (Http.readyState === 4 && Http.status === 200) {
+        const response = Http.responseText;
+        const parsedResponse = parseSemesters(response);
+        setSemesterData(parsedResponse);
+      }
+    }
+  };
+
+  const GET_SUBJECTS = (year, semester) => {
+    let semesterString = semester.split(' ')[0].toLowerCase();
+    const subjects = `http://courses.illinois.edu/cisapp/explorer/schedule/${year}/${semesterString}.xml`;
+    console.log(subjects)
+    const Http = new XMLHttpRequest();
+    Http.open("GET", subjects);
+    Http.send();
+
+    Http.onreadystatechange = (e) => {
+      if (Http.readyState === 4 && Http.status === 200) {
+        const response = Http.responseText;
+        const parsedResponse = parseSubjects(response);
+        setSubjectData(parsedResponse);
+      }
+    }
+  };
+
+  const GET_COURSE = (year, semester, subject) => {
+    const courses = `http://courses.illinois.edu/cisapp/explorer/schedule/${year}/${semester.replace(/ /g, '')}/${subject}.xml`;
+    const Http = new XMLHttpRequest();
+    Http.open("GET", courses);
+    Http.send();
+
+    Http.onreadystatechange = (e) => {
+      if (Http.readyState === 4 && Http.status === 200) {
+        const response = Http.responseText;
+        const parsedResponse = parseCourses(response);
+        setCourseData(parsedResponse);
+      }
+    }
+  };
+
+  const parseYears = (response) => {
     let yearData = parser.parse(response);
-    
-    // Convert the response from an object to an array
-    yearData = Object.values(yearData);
-    yearData = (Object.values(Object.values(yearData[1])[1])[0]);
-    const minYear = new Date().getFullYear()
+    yearData = Object.values(Object.values(Object.values(yearData)[1])[1])[0];
+    const minYear = new Date().getFullYear();
     yearData = yearData.filter(year => year >= minYear);
-    return yearData
+    return yearData;
   };
 
-  const handleItemClick = (item) => {
-    // Handle click event for each item
-    console.log("Clicked item:", item);
+  const parseSemesters = (response) => {
+    let semesterData = parser.parse(response);
+    semesterData = Object.values(Object.values(Object.values(semesterData)[1])[1])[0];
+    return semesterData;
   };
 
-  const resetResponseData = () => {
-    setResponseData([]);
+  const parseSubjects = (response) => {
+    let subjectData = parser.parse(response);
+    console.log(Object.values(Object.values(Object.values(subjectData)[1])[2])[0]);
+    subjectData = Object.values(Object.values(Object.values(subjectData)[1])[2])[0];
+    return subjectData;
+  };
+
+  const parseCourses = (response) => {
+    let courseData = parser.parse(response);
+    courseData = Object.values(Object.values(Object.values(subjectData)[1])[1])[0];
+    console.log(courseData);
+    return courseData;
+  };
+
+  const resetYearData = () => {
+    setYearData([]);
+    setCourseData([]);
+    setSemesterData([]);
+    setSubjectData([]);
   };
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <TouchableOpacity onPress={GET} style={[styles.buttonText, { marginRight: 14, padding: 1, borderWidth: 3, borderColor: 'lightgray', borderRadius: 5 }]}>
+        <TouchableOpacity onPress={GET_YEARS} style={[styles.buttonText, { marginRight: 14, padding: 1, borderWidth: 3, borderColor: 'lightgray', borderRadius: 5 }]}>
           <Text>Test HTTP 'GET' request</Text>
         </TouchableOpacity>
 
-        {responseData.map((item, index) => (
-          <TouchableOpacity key={index} onPress={() => handleItemClick(item)} style={styles.itemContainer}>
-            <Text style={styles.itemText}>{item}</Text>
+        {yearData.map((year, index) => (
+          <TouchableOpacity key={index} onPress={() => GET_SEMESTER(year)} style={styles.itemText}>
+            <Text>{year}</Text>
+            {semesterData.map((semester, index) => (
+              <TouchableOpacity key={index} onPress={() => GET_SUBJECTS(year, semester)} style={styles.itemText}>
+                <Text>{semester}</Text>
+                {subjectData.map((subject, index) => (
+                  <TouchableOpacity key={index} onPress={() => GET_COURSE(year, semester, subject)} style={styles.itemText}>
+                    <Text>{subject}</Text>
+                  </TouchableOpacity>
+                ))}
+              </TouchableOpacity>
+            ))}
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       <View style={styles.navbar}>
         <TouchableOpacity style={[styles.buttonText, { marginRight: 14, padding: 1, borderWidth: 3, borderColor: 'lightgray', borderRadius: 5 }]}>
-          <Text style={styles.buttonText}>Button 1</Text>
+          <Text style={styles.buttonText}>Settings</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={resetResponseData} style={[styles.buttonText, { marginRight: 14, padding: 1, borderWidth: 3, borderColor: 'lightgray', borderRadius: 5 }]}>
+        <TouchableOpacity onPress={resetYearData} style={[styles.buttonText, { marginRight: 14, padding: 1, borderWidth: 3, borderColor: 'lightgray', borderRadius: 5 }]}>
           <Text style={styles.buttonText}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.buttonText, {marginRight: 14, padding: 1, borderWidth: 3, borderColor: 'lightgray', borderRadius: 5}]}>
@@ -89,7 +164,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 100,
+    height: 80,
     backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
@@ -98,17 +173,14 @@ const styles = StyleSheet.create({
     fontSize: 25,
     color: 'white',
   },
-  itemContainer: {
-    marginVertical: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: 'lightgray',
-    borderRadius: 5,
-    backgroundColor: 'lightblue',
-  },
   itemText: {
     fontSize: 18,
     color: 'black',
+    marginVertical: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 5,
+    backgroundColor: 'lightblue',
   },
 });
-
