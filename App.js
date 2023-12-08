@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { abbreviations } from './data.js';
 
 export default function App() {
   const { XMLParser } = require("fast-xml-parser");
@@ -9,6 +10,10 @@ export default function App() {
   const [semesterData, setSemesterData] = useState([]);
   const [subjectData, setSubjectData] = useState([]);
   const [courseData, setCourseData] = useState([]);
+
+  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedSemester, setSelectedSemester] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
 
   const GET_YEARS = () => {
     const years = 'http://courses.illinois.edu/cisapp/explorer/schedule.xml';
@@ -30,7 +35,7 @@ export default function App() {
     const Http = new XMLHttpRequest();
     Http.open("GET", semester);
     Http.send();
-
+    setSelectedYear(year);
     Http.onreadystatechange = (e) => {
       if (Http.readyState === 4 && Http.status === 200) {
         const response = Http.responseText;
@@ -43,11 +48,10 @@ export default function App() {
   const GET_SUBJECTS = (year, semester) => {
     let semesterString = semester.split(' ')[0].toLowerCase();
     const subjects = `http://courses.illinois.edu/cisapp/explorer/schedule/${year}/${semesterString}.xml`;
-    console.log(subjects)
     const Http = new XMLHttpRequest();
     Http.open("GET", subjects);
     Http.send();
-
+    setSelectedSemester(semester);
     Http.onreadystatechange = (e) => {
       if (Http.readyState === 4 && Http.status === 200) {
         const response = Http.responseText;
@@ -58,11 +62,12 @@ export default function App() {
   };
 
   const GET_COURSE = (year, semester, subject) => {
-    const courses = `http://courses.illinois.edu/cisapp/explorer/schedule/${year}/${semester.replace(/ /g, '')}/${subject}.xml`;
+    let semesterString = semester.split(' ')[0].toLowerCase();
+    const courses = `http://courses.illinois.edu/cisapp/explorer/schedule/${year}/${semesterString}/${abbreviations[subject]}.xml`;
     const Http = new XMLHttpRequest();
     Http.open("GET", courses);
     Http.send();
-
+    setSelectedSubject(subject);
     Http.onreadystatechange = (e) => {
       if (Http.readyState === 4 && Http.status === 200) {
         const response = Http.responseText;
@@ -88,15 +93,14 @@ export default function App() {
 
   const parseSubjects = (response) => {
     let subjectData = parser.parse(response);
-    console.log(Object.values(Object.values(Object.values(subjectData)[1])[2])[0]);
     subjectData = Object.values(Object.values(Object.values(subjectData)[1])[2])[0];
     return subjectData;
   };
 
   const parseCourses = (response) => {
     let courseData = parser.parse(response);
-    courseData = Object.values(Object.values(Object.values(subjectData)[1])[1])[0];
-    console.log(courseData);
+    console.log(Object.values(Object.values(Object.values(courseData)[1])[12]))
+    courseData = Object.values(Object.values(Object.values(courseData)[1])[12])[0];
     return courseData;
   };
 
@@ -117,12 +121,17 @@ export default function App() {
         {yearData.map((year, index) => (
           <TouchableOpacity key={index} onPress={() => GET_SEMESTER(year)} style={styles.itemText}>
             <Text>{year}</Text>
-            {semesterData.map((semester, index) => (
+            {selectedYear === year && semesterData.map((semester, index) => (
               <TouchableOpacity key={index} onPress={() => GET_SUBJECTS(year, semester)} style={styles.itemText}>
                 <Text>{semester}</Text>
-                {subjectData.map((subject, index) => (
+                {selectedSemester === semester && subjectData.map((subject, index) => (
                   <TouchableOpacity key={index} onPress={() => GET_COURSE(year, semester, subject)} style={styles.itemText}>
                     <Text>{subject}</Text>
+                    {selectedSubject === subject && courseData.map((course, index) => (
+                      <TouchableOpacity key={index} style={styles.itemText}>
+                        <Text>{course}</Text>
+                      </TouchableOpacity>
+                    ))}
                   </TouchableOpacity>
                 ))}
               </TouchableOpacity>
