@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Picker } from 'react-native';
 import { abbreviations } from './data.js';
 
 export default function App() {
@@ -100,7 +100,11 @@ export default function App() {
   const parseCourses = (response) => {
     let courseData = parser.parse(response);
     console.log(Object.values(Object.values(Object.values(courseData)[1])[12]))
-    courseData = Object.values(Object.values(Object.values(courseData)[1])[12])[0];
+    try {
+      courseData = Object.values(Object.values(Object.values(courseData)[1])[12])[0];
+    } catch (error) {
+      courseData = Object.values(Object.values(Object.values(courseData)[1])[12]);
+    }
     return courseData;
   };
 
