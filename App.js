@@ -3,8 +3,8 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Picker } from 're
 import { abbreviations } from './data.js';
 
 export default function App() {
-  const { XMLParser } = require("fast-xml-parser");
-  const parser = new XMLParser();
+  const { xmlParser } = require("fast-xml-parser");
+  const parser = new xmlParser();
   
   const [yearData, setYearData] = useState([]);
   const [semesterData, setSemesterData] = useState([]);
@@ -15,62 +15,62 @@ export default function App() {
   const [selectedSemester, setSelectedSemester] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
 
-  const GET_YEARS = () => {
+  const getYears = () => {
     const years = 'http://courses.illinois.edu/cisapp/explorer/schedule.xml';
-    const Http = new XMLHttpRequest();
-    Http.open("GET", years);
-    Http.send();
+    const http = new XMLHttpRequest();
+    http.open("GET", years);
+    http.send();
 
-    Http.onreadystatechange = (e) => {
-      if (Http.readyState === 4 && Http.status === 200) {
-        const response = Http.responseText;
+    http.onreadystatechange = (e) => {
+      if (http.readyState === 4 && http.status === 200) {
+        const response = http.responseText;
         const parsedResponse = parseYears(response);
         setYearData(parsedResponse);
       }
     }
   };
 
-  const GET_SEMESTER = (year) => {
+  const getSemester = (year) => {
     const semester = `http://courses.illinois.edu/cisapp/explorer/schedule/${year}.xml`;
-    const Http = new XMLHttpRequest();
-    Http.open("GET", semester);
-    Http.send();
+    const http = new XMLHttpRequest();
+    http.open("GET", semester);
+    http.send();
     setSelectedYear(year);
-    Http.onreadystatechange = (e) => {
-      if (Http.readyState === 4 && Http.status === 200) {
-        const response = Http.responseText;
+    http.onreadystatechange = (e) => {
+      if (http.readyState === 4 && http.status === 200) {
+        const response = http.responseText;
         const parsedResponse = parseSemesters(response);
         setSemesterData(parsedResponse);
       }
     }
   };
 
-  const GET_SUBJECTS = (year, semester) => {
+  const getSubjects = (year, semester) => {
     let semesterString = semester.split(' ')[0].toLowerCase();
     const subjects = `http://courses.illinois.edu/cisapp/explorer/schedule/${year}/${semesterString}.xml`;
-    const Http = new XMLHttpRequest();
-    Http.open("GET", subjects);
-    Http.send();
+    const http = new XMLHttpRequest();
+    http.open("GET", subjects);
+    http.send();
     setSelectedSemester(semester);
-    Http.onreadystatechange = (e) => {
-      if (Http.readyState === 4 && Http.status === 200) {
-        const response = Http.responseText;
+    http.onreadystatechange = (e) => {
+      if (http.readyState === 4 && http.status === 200) {
+        const response = http.responseText;
         const parsedResponse = parseSubjects(response);
         setSubjectData(parsedResponse);
       }
     }
   };
 
-  const GET_COURSE = (year, semester, subject) => {
+  const getCourse = (year, semester, subject) => {
     let semesterString = semester.split(' ')[0].toLowerCase();
     const courses = `http://courses.illinois.edu/cisapp/explorer/schedule/${year}/${semesterString}/${abbreviations[subject]}.xml`;
-    const Http = new XMLHttpRequest();
-    Http.open("GET", courses);
-    Http.send();
+    const http = new XMLHttpRequest();
+    http.open("GET", courses);
+    http.send();
     setSelectedSubject(subject);
-    Http.onreadystatechange = (e) => {
-      if (Http.readyState === 4 && Http.status === 200) {
-        const response = Http.responseText;
+    http.onreadystatechange = (e) => {
+      if (http.readyState === 4 && http.status === 200) {
+        const response = http.responseText;
         const parsedResponse = parseCourses(response);
         setCourseData(parsedResponse);
       }
@@ -113,18 +113,18 @@ export default function App() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <TouchableOpacity onPress={GET_YEARS} style={[styles.buttonText, { marginRight: 14, padding: 1, borderWidth: 3, borderColor: 'lightgray', borderRadius: 5 }]}>
+        <TouchableOpacity onPress={getYears} style={[styles.buttonText, { marginRight: 14, padding: 1, borderWidth: 3, borderColor: 'lightgray', borderRadius: 5 }]}>
           <Text>Test HTTP 'GET' request</Text>
         </TouchableOpacity>
 
         {yearData.map((year, index) => (
-          <TouchableOpacity key={index} onPress={() => GET_SEMESTER(year)} style={styles.itemText}>
+          <TouchableOpacity key={index} onPress={() => getSemester(year)} style={styles.itemText}>
             <Text>{year}</Text>
             {selectedYear === year && semesterData.map((semester, index) => (
-              <TouchableOpacity key={index} onPress={() => GET_SUBJECTS(year, semester)} style={styles.itemText}>
+              <TouchableOpacity key={index} onPress={() => getSubjects(year, semester)} style={styles.itemText}>
                 <Text>{semester}</Text>
                 {selectedSemester === semester && subjectData.map((subject, index) => (
-                  <TouchableOpacity key={index} onPress={() => GET_COURSE(year, semester, subject)} style={styles.itemText}>
+                  <TouchableOpacity key={index} onPress={() => getCourse(year, semester, subject)} style={styles.itemText}>
                     <Text>{subject}</Text>
                     {selectedSubject === subject && courseData.map((course, index) => (
                       <TouchableOpacity key={index} style={styles.itemText}>
