@@ -99,12 +99,7 @@ export default function App() {
 
   const parseCourses = (response) => {
     let courseData = parser.parse(response);
-    console.log(Object.values(Object.values(Object.values(courseData)[1])[12]))
-    try {
-      courseData = Object.values(Object.values(Object.values(courseData)[1])[12])[0];
-    } catch (error) {
-      courseData = Object.values(Object.values(Object.values(courseData)[1])[12]);
-    }
+    courseData = Object.values(courseData["ns2:subject"]["courses"])[0];
     return courseData;
   };
 
